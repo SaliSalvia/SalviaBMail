@@ -188,7 +188,7 @@ https://salisec.ir</value>
                 </account>
               </accounts>
             </k9settings>
-        """.trimIndent()
+        """.trim()
 
         val parsed = EmailAutoconfig.parseK9Settings(k9sXml)
         assertNotNull(parsed)
