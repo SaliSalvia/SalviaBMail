@@ -33,16 +33,16 @@ REPO="$DEFAULT_REPO"
 REMOTE="$(git remote get-url origin 2>/dev/null || true)"
 case "$REMOTE" in
   *github.com*)
-    REMOTE="\${REMOTE#*github.com[:/]}"
-    REMOTE="\${REMOTE%.git}"
-    REMOTE="\${REMOTE%/}"
+    REMOTE="${REMOTE#*github.com[:/]}"
+    REMOTE="${REMOTE%.git}"
+    REMOTE="${REMOTE%/}"
     if [[ "$REMOTE" == */* ]]; then REPO="$REMOTE"; fi
     ;;
 esac
 
 printf '\nTarget repository: %s\n' "$REPO"
 read -r -p "Repository owner/name [$REPO]: " ANSWER
-REPO="\${ANSWER:-$REPO}"
+REPO="${ANSWER:-$REPO}"
 gh repo view "$REPO" --json nameWithOwner -q .nameWithOwner >/dev/null 2>&1 \
   || die "Repository '$REPO' not found or inaccessible."
 ok "Authenticated as $GH_USER; target is $REPO."
@@ -50,7 +50,7 @@ ok "Authenticated as $GH_USER; target is $REPO."
 printf '\nKeystore settings (press Enter to accept defaults).\n'
 KS_FILE="$DEFAULT_KS"
 read -r -p "Keystore file [$KS_FILE]: " ANSWER
-KS_FILE="\${ANSWER:-$KS_FILE}"
+KS_FILE="${ANSWER:-$KS_FILE}"
 
 if [[ -e "$KS_FILE" ]]; then
   warn "File '$KS_FILE' already exists."
@@ -62,7 +62,7 @@ fi
 while true; do
   read -r -s -p "Keystore password (minimum 8 characters): " STORE_PASS
   printf '\n'
-  (( \${#STORE_PASS} >= 8 )) || { warn "Password is too short."; continue; }
+  (( ${#STORE_PASS} >= 8 )) || { warn "Password is too short."; continue; }
   read -r -s -p "Confirm keystore password: " CONFIRM
   printf '\n'
   [[ "$STORE_PASS" == "$CONFIRM" ]] && break
@@ -70,14 +70,14 @@ while true; do
 done
 
 read -r -p "Use the same password for the key? [Y/n]: " SAME
-SAME="\${SAME:-Y}"
+SAME="${SAME:-Y}"
 if [[ "$SAME" =~ ^[Yy]$ ]]; then
   KEY_PASS="$STORE_PASS"
 else
   while true; do
     read -r -s -p "Key password (minimum 8 characters): " KEY_PASS
     printf '\n'
-    (( \${#KEY_PASS} >= 8 )) || { warn "Password is too short."; continue; }
+    (( ${#KEY_PASS} >= 8 )) || { warn "Password is too short."; continue; }
     read -r -s -p "Confirm key password: " CONFIRM
     printf '\n'
     [[ "$KEY_PASS" == "$CONFIRM" ]] && break
@@ -86,9 +86,9 @@ else
 fi
 
 read -r -p "Key alias [$DEFAULT_ALIAS]: " ALIAS
-ALIAS="\${ALIAS:-$DEFAULT_ALIAS}"
+ALIAS="${ALIAS:-$DEFAULT_ALIAS}"
 read -r -p "Validity in days [$DEFAULT_VALIDITY]: " VALIDITY
-VALIDITY="\${VALIDITY:-$DEFAULT_VALIDITY}"
+VALIDITY="${VALIDITY:-$DEFAULT_VALIDITY}"
 [[ "$VALIDITY" =~ ^[0-9]+$ ]] && (( VALIDITY >= 9000 )) || die "Validity must be numeric and at least 9000 days."
 
 printf '\nCertificate identity. CN is required; other values may be blank.\n'
@@ -97,9 +97,9 @@ while [[ -z "$CN" ]]; do
   read -r -p "Common Name / developer name: " CN
 done
 read -r -p "Organization [SaliSalvia]: " ORG
-ORG="\${ORG:-SaliSalvia}"
+ORG="${ORG:-SaliSalvia}"
 read -r -p "Organizational unit [Android]: " OU
-OU="\${OU:-Android}"
+OU="${OU:-Android}"
 read -r -p "Country code (2 letters, optional): " COUNTRY
 if [[ -n "$COUNTRY" && ! "$COUNTRY" =~ ^[A-Za-z]{2}$ ]]; then
   die "Country code must contain exactly two letters."
