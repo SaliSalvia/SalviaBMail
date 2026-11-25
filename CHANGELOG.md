@@ -21,7 +21,7 @@
 
 ## [2.0.4] — 2026-11-25 · Feature consolidation candidate
 
-- Cloudflare Workers AI به‌عنوان پرووایدر پنجم با account-scoped endpoints اضافه شد.
+- Cloudflare Workers AI به‌عنوان پرووایدر پنجم با account-scoped endpoints، اعتبار رایگان روزانه ۱۰٬۰۰۰ Neurons و fallback به مدل بعدی در خطای مدل‌های پولی اضافه شد.
 - امکانات کمپین، داشبورد، خط لوله و مدیریت ارسال از شاخهٔ قدیمی‌تر به‌صورت گزینشی ادغام شدند.
 - ورود مخاطبان از کلیپ‌بورد، جست‌وجوی سرنخ و انتخاب مستقیم مرحله فروش، KPI پیگیری و فروش، retry گروهی امن برای `FAILED` و فیلتر خطاهای لاگ اضافه شد.
 - ناوبری واکنش‌گرا: NavigationRail برای صفحه‌های عریض (حداقل ۶۰۰dp)، NavigationBar برای موبایل و Crossfade بین صفحه‌ها.
