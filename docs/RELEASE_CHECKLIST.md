@@ -44,7 +44,7 @@
 - [x] `allowBackup=false` **و** `@xml/data_extraction_rules` (Android 12+ cloud backup / device transfer هر دو `exclude domain="root"`)
 - [x] `network_security_config` نصب شد؛ cleartext غیرفعال؛ `android:exported` بررسی شد
 - [x] هیچ کلید API / ایمیل خام / متنی در لاگ، پیام خطا یا artifact نیست (`PrivacyRedactorTest` + ماسک لاگ/export)
-- [x] [`PRIVACY.md`](../PRIVACY.md) (FA/EN) منتشر شد؛ موجودی داده و طرفهای سوم (hcnsec/Gemini/Groq/OpenRouter/Cloudflare/You.com/Brevo/IMAP) درج شد
+- [x] [`PRIVACY.md`](../PRIVACY.md) (FA/EN) منتشر شد؛ موجودی داده و طرفهای سوم (hcnsec/Gemini/Groq/OpenRouter/You.com/Brevo/IMAP) درج شد
 - [x] [`SECURITY.md`](../SECURITY.md) و مسیر گزارش خصوصی موجود است
 - [x] «پاکسازی کامل دادههای اپ» داخل تنظیمات با دیالوگ تأیید: صف ارسال ابتدا لغو می‌شود؛ `messages` / `logs` / `campaigns` / `studio_drafts` / `company_cache` / `pdf_cache`، prefs رمزنگاریشده و session پاک می‌شوند و دسترسی پایدار SAF آزاد می‌شود (`App.clearAllData`)
 - [x] ذخیره متن PDF در cache محلی `pdf_cache` در خط‌مشی حریم خصوصی افشا شده است؛ Room به‌صورت مستقل با SQLCipher رمز نشده است
