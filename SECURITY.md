@@ -11,12 +11,12 @@
 ## Scope
 - اپلیکیشن اندروید `ir.salisec.autosender` و کد منبع این ریپو
 - ذخیرهسازی کلیدها، مدیریت پیوستها، ارسال ایمیل، و پردازش گزارشهای PDF
-- خارج از دامنه: سرویسهای شخص ثالث (hcnsec / Google AI Studio / Groq / OpenRouter / Cloudflare Workers AI / You.com / Brevo) — آسیبپذیری آنها باید مستقیماً به ارائهدهنده گزارش شود
+- خارج از دامنه: سرویسهای شخص ثالث (hcnsec / Google AI Studio / Groq / OpenRouter / You.com / Brevo) — آسیبپذیری آنها باید مستقیماً به ارائهدهنده گزارش شود
 
 ## Data handled (and how)
 | داده | محل | محافظت فعلی |
 |---|---|---|
-| کلیدهای هوش مصنوعی (hcnsec / Google AI Studio / Groq / OpenRouter / Cloudflare API Token و Account ID) / You.com / Brevo / IMAP | `EncryptedSharedPreferences` (AES، Keystore دستگاه) | رمزنگاری at rest؛ هرگز در لاگ/artifact/Release چاپ نمیشود |
+| کلیدهای هوش مصنوعی (hcnsec / Google AI Studio / Groq / OpenRouter) / You.com / Brevo / IMAP | `EncryptedSharedPreferences` (AES، Keystore دستگاه) | رمزنگاری at rest؛ هرگز در لاگ/artifact/Release چاپ نمیشود |
 | لیست مخاطبان (دامنه، ایمیل، نام)، موضوع و متن ایمیلها، لاگها | Room `sali.db` روی دستگاه | فقط محلی؛ بدون آپلود به سرور ما (هیچ بکندی وجود ندارد). آدرسها در لاگها و خروجی لاگ **ماسک** میشوند (`PrivacyRedactor`) |
 | متن استخراج‌شده PDF / sidecar | حافظه موقت + Room `pdf_cache` روی دستگاه | فقط بخش شواهد همان دامنه برای تولید متن به پرووایدر هوش مصنوعی انتخاب‌شده ارسال می‌شود؛ cache محلی تا پاکسازی کامل داده‌ها می‌ماند و DB جداگانه با SQLCipher رمز نشده است |
 | زمینه عمومی شرکت | You.com Search API | فقط اطلاعات سطح شرکت؛ snippetها از ایمیل/تلفن پاکسازی میشوند |
