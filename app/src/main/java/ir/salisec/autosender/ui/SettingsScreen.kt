@@ -290,7 +290,7 @@ fun SettingsScreen(
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("دریافت کلید رایگان ${prov.shortName}")
+                    Text(if (prov.freeTier) "دریافت کلید رایگان ${prov.shortName}" else "دریافت API Token ${prov.shortName}")
                 }
             }
 
