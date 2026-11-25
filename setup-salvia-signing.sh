@@ -47,6 +47,21 @@ gh repo view "$REPO" --json nameWithOwner -q .nameWithOwner >/dev/null 2>&1 \
   || die "Repository '$REPO' not found or inaccessible."
 ok "Authenticated as $GH_USER; target is $REPO."
 
+# Never rotate an existing release identity accidentally. The previous app key
+# is required to update the same Android application on Google Play.
+EXISTING_SIGNING_SECRETS=0
+for SECRET_NAME in "$SEC_KEYSTORE" "$SEC_STOREPASS" "$SEC_ALIAS" "$SEC_KEYPASS"; do
+  if gh secret list -R "$REPO" | awk -v wanted="$SECRET_NAME" '$1 == wanted { found=1 } END { exit !found }'; then
+    EXISTING_SIGNING_SECRETS=$((EXISTING_SIGNING_SECRETS + 1))
+  fi
+done
+if (( EXISTING_SIGNING_SECRETS == 4 )); then
+  die "All four release-signing secrets already exist. Refusing to generate or upload a replacement key. Use the original keystore backup; do not rotate an app-signing identity casually."
+elif (( EXISTING_SIGNING_SECRETS > 0 )); then
+  die "Only some signing secrets exist. Resolve the partial configuration manually before creating a key; no secret was changed."
+fi
+ok "No existing production signing secret found; first-time setup may proceed."
+
 printf '\nKeystore settings (press Enter to accept defaults).\n'
 KS_FILE="$DEFAULT_KS"
 read -r -p "Keystore file [$KS_FILE]: " ANSWER
