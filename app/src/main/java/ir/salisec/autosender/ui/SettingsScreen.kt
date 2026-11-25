@@ -254,7 +254,7 @@ fun SettingsScreen(
             header = "۱. هوش مصنوعی (انتخاب پرووایدر)",
             icon = Icons.Default.AutoAwesome,
             badge = if (cfg.verified && cfg.model.isNotBlank()) cfg.model else if (cfg.key.isNotBlank()) "اتصال آماده" else "نیاز به کلید/شناسه",
-            badgeColor = if (cfg.verified) GreenOk else if (cfg.key.isNotBlank() && (prov != AiProvider.CLOUDFLARE || cfg.accountId.isNotBlank())) OrangeWarn else RedErr
+            badgeColor = if (cfg.verified) GreenOk else if (cfg.key.isNotBlank()) OrangeWarn else RedErr
         ) {
             SubTitle("پرووایدر فعال را انتخاب کنید؛ برای هر پرووایدر کلید و مدل جدا ذخیره می‌شود. فقط پرووایدرهای دارای اطلاعات کامل اتصال در فال‌بک خودکار شرکت می‌کنند.")
             FlowRow(
@@ -330,7 +330,7 @@ fun SettingsScreen(
             BigButton(
                 text = if (probingAi) "در حال سنجش مدل‌های ${prov.shortName}..." else "سنجش API و انتخاب قوی‌ترین مدل ${if (prov.freeTier) "رایگان " else ""}در دسترس",
                 loading = probingAi,
-                enabled = cfg.key.isNotBlank() && (prov != AiProvider.CLOUDFLARE || cfg.accountId.isNotBlank()),
+                enabled = cfg.key.isNotBlank(),
                 modifier = Modifier.testTag("settings_probe_ai")
             ) {
                 scope.launch {
