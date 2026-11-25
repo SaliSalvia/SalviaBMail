@@ -597,7 +597,7 @@ class AiClient(private val client: OkHttpClient) {
                     lastDraftError = e
                     // Bad API key: no other model of THIS provider can succeed, but another provider might
                     val msg = e.message.orEmpty()
-                    if (msg.contains("HTTP 401") || msg.contains("HTTP 403")) continue@providerLoop
+                    if (shouldSkipProviderForHttpError(prov, msg)) continue@providerLoop
                 }
             }
         }
@@ -876,6 +876,28 @@ ${untrustedSourceBoundary()}"""
     private fun messages(system: String, user: String): JSONArray = JSONArray()
         .put(JSONObject().put("role", "system").put("content", system))
         .put(JSONObject().put("role", "user").put("content", user))
+
+    /**
+     * A Cloudflare 403 may mean one specific model requires a paid plan; try the
+     * next discovered model before abandoning the whole provider. Credential/
+     * permission failures still skip Cloudflare and let the provider chain fall back.
+     */
+    internal fun shouldSkipProviderForHttpError(provider: AiProvider, message: String): Boolean {
+        val normalized = message.lowercase()
+        if ("http 401" in normalized) return true
+        if ("http 403" !in normalized) return false
+        if (provider != AiProvider.CLOUDFLARE) return true
+        return listOf(
+            "invalid token",
+            "invalid api token",
+            "authentication",
+            "unauthorized",
+            "not authorized",
+            "insufficient permission",
+            "missing permission",
+            "workers ai read permission"
+        ).any { it in normalized }
+    }
 
     private suspend fun callModel(
         s: Settings,
