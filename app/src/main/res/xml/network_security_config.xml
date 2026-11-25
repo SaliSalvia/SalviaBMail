@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
     <!--
-      All configured endpoints (Brevo, hcnsec, Google AI Studio, Groq, OpenRouter, You.com) are HTTPS. Cleartext is
+      All configured endpoints (Brevo, hcnsec, Google AI Studio, Groq, OpenRouter, Cloudflare Workers AI, You.com) are HTTPS. Cleartext is
       disabled so a mistyped http:// endpoint fails closed instead of leaking
       API keys and recipient data in plaintext.
     -->
