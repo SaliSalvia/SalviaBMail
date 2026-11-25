@@ -68,7 +68,6 @@ enum class AiProvider(
         freeTier = true,
         fallbackModel = "meta-llama/llama-3.3-70b-instruct:free",
         hint = "فقط مدل‌های رایگان (:free) انتخاب می‌شوند؛ سقف روزانهٔ مشترک برای همهٔ آن‌ها حدود چند ده درخواست است و با شارژ حداقلی حساب بالا می‌رود. اگر خطای data policy / Free model publication دیدید، در تنظیمات Privacy حساب OpenRouter استفاده از مدل‌های رایگان را مجاز کنید. توجه: ارائه‌دهندگان مدل‌های رایگان ممکن است ورودی را ثبت یا برای آموزش استفاده کنند."
-    ),
     );
     companion object {
         fun fromId(id: String?): AiProvider =
