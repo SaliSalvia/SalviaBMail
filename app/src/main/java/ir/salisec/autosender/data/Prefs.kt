@@ -35,7 +35,6 @@ data class Settings(
     val google: ProviderConfig = ProviderConfig(endpoint = GOOGLE_CHAT_ENDPOINT),
     val groq: ProviderConfig = ProviderConfig(endpoint = GROQ_CHAT_ENDPOINT),
     val openRouter: ProviderConfig = ProviderConfig(endpoint = OPENROUTER_CHAT_ENDPOINT),
-    val cloudflare: ProviderConfig = ProviderConfig(endpoint = CLOUDFLARE_CHAT_ENDPOINT),
     // 4 Structural Reference Templates for hcnsec style & persuasion guidance
     val template1: String = "",
     val template2: String = "",
@@ -103,7 +102,6 @@ data class Settings(
         AiProvider.GOOGLE -> google
         AiProvider.GROQ -> groq
         AiProvider.OPENROUTER -> openRouter
-        AiProvider.CLOUDFLARE -> cloudflare
     }
 
     fun withConfig(p: AiProvider, c: ProviderConfig): Settings = when (p) {
@@ -118,7 +116,6 @@ data class Settings(
         AiProvider.GOOGLE -> copy(google = c)
         AiProvider.GROQ -> copy(groq = c)
         AiProvider.OPENROUTER -> copy(openRouter = c)
-        AiProvider.CLOUDFLARE -> copy(cloudflare = c)
     }
 
     fun activeConfig(): ProviderConfig = config(provider())
@@ -131,7 +128,7 @@ data class Settings(
         val active = provider()
         val keyed = AiProvider.values().filter { p ->
             val c = config(p)
-            c.key.isNotBlank() && (p != AiProvider.CLOUDFLARE || c.accountId.isNotBlank())
+            c.key.isNotBlank()
         }
         return if (aiFallbackEnabled) {
             keyed.filter { it == active } + keyed.filter { it != active }
@@ -155,6 +152,14 @@ data class Settings(
 
 class Prefs(context: Context) {
     private val sp: SharedPreferences = createSecurePrefs(context.applicationContext)
+
+    init {
+        // Remove legacy Cloudflare Workers AI credentials/configuration from encrypted storage.
+        sp.edit().remove("cloudflare.key").remove("cloudflare.accountId")
+            .remove("cloudflare.endpoint").remove("cloudflare.model")
+            .remove("cloudflare.reviewModel").remove("cloudflare.verified")
+            .remove("cloudflare.availableModels").apply()
+    }
 
     private fun createSecurePrefs(context: Context): SharedPreferences {
         fun buildEncrypted(): SharedPreferences = EncryptedSharedPreferences.create(
@@ -208,7 +213,6 @@ class Prefs(context: Context) {
         google = loadProvider("google", AiProvider.GOOGLE),
         groq = loadProvider("groq", AiProvider.GROQ),
         openRouter = loadProvider("openRouter", AiProvider.OPENROUTER),
-        cloudflare = loadProvider("cloudflare", AiProvider.CLOUDFLARE),
         template1 = sp.getString("template1", "")!!,
         template2 = sp.getString("template2", "")!!,
         template3 = sp.getString("template3", "")!!,
@@ -300,13 +304,11 @@ class Prefs(context: Context) {
         saveProvider(e, "google", AiProvider.GOOGLE, s.google)
         saveProvider(e, "groq", AiProvider.GROQ, s.groq)
         saveProvider(e, "openRouter", AiProvider.OPENROUTER, s.openRouter)
-        saveProvider(e, "cloudflare", AiProvider.CLOUDFLARE, s.cloudflare)
         e.apply()
     }
 
     private fun loadProvider(prefix: String, p: AiProvider) = ProviderConfig(
         key = sp.getString("$prefix.key", "")!!,
-        accountId = sp.getString("$prefix.accountId", "")!!,
         endpoint = normalizeChatEndpoint(sp.getString("$prefix.endpoint", p.defaultEndpoint), p.defaultEndpoint),
         model = sp.getString("$prefix.model", "")!!,
         reviewModel = sp.getString("$prefix.reviewModel", "")!!,
@@ -316,7 +318,6 @@ class Prefs(context: Context) {
 
     private fun saveProvider(e: SharedPreferences.Editor, prefix: String, p: AiProvider, c: ProviderConfig) {
         e.putString("$prefix.key", c.key.trim())
-            .putString("$prefix.accountId", c.accountId.trim())
             .putString("$prefix.endpoint", normalizeChatEndpoint(c.endpoint, p.defaultEndpoint))
             .putString("$prefix.model", c.model.trim())
             .putString("$prefix.reviewModel", c.reviewModel.trim())
