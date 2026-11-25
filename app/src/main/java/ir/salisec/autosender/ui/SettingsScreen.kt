@@ -243,7 +243,7 @@ fun SettingsScreen(
         }
         k9Notice?.let { (ok, msg) -> Chip(msg, if (ok) GreenOk else RedErr) }
 
-        // 1. AI provider (hcnsec / Google AI Studio / Groq / OpenRouter / Cloudflare Workers AI) + live model probe
+        // 1. AI provider (hcnsec / Google AI Studio / Groq / OpenRouter) + live model probe
         val prov = s.provider()
         val cfg = s.config(prov)
         fun updateCfg(change: (ProviderConfig) -> ProviderConfig) {
@@ -253,7 +253,7 @@ fun SettingsScreen(
         Section(
             header = "۱. هوش مصنوعی (انتخاب پرووایدر)",
             icon = Icons.Default.AutoAwesome,
-            badge = if (cfg.verified && cfg.model.isNotBlank()) cfg.model else if (cfg.key.isNotBlank() && (prov != AiProvider.CLOUDFLARE || cfg.accountId.isNotBlank())) "اتصال آماده" else "نیاز به کلید/شناسه",
+            badge = if (cfg.verified && cfg.model.isNotBlank()) cfg.model else if (cfg.key.isNotBlank()) "اتصال آماده" else "نیاز به کلید/شناسه",
             badgeColor = if (cfg.verified) GreenOk else if (cfg.key.isNotBlank() && (prov != AiProvider.CLOUDFLARE || cfg.accountId.isNotBlank())) OrangeWarn else RedErr
         ) {
             SubTitle("پرووایدر فعال را انتخاب کنید؛ برای هر پرووایدر کلید و مدل جدا ذخیره می‌شود. فقط پرووایدرهای دارای اطلاعات کامل اتصال در فال‌بک خودکار شرکت می‌کنند.")
@@ -271,7 +271,7 @@ fun SettingsScreen(
                         },
                         label = {
                             val pc = s.config(p)
-                            val ready = pc.key.isNotBlank() && (p != AiProvider.CLOUDFLARE || pc.accountId.isNotBlank())
+                            val ready = pc.key.isNotBlank() && true
                             Text(p.shortName + if (ready) " ✓" else "")
                         }
                     )
@@ -294,16 +294,6 @@ fun SettingsScreen(
                 }
             }
 
-            if (prov == AiProvider.CLOUDFLARE) {
-                LabeledField(
-                    "Cloudflare Account ID",
-                    cfg.accountId,
-                    placeholder = "شناسه حساب از داشبورد Cloudflare",
-                    modifier = Modifier.testTag("settings_cloudflare_account")
-                ) { v ->
-                    updateCfg { it.copy(accountId = v.trim(), verified = false, availableModels = "") }
-                }
-            }
             LabeledField(
                 "کلید API ${prov.title} (${prov.keyPlaceholder})",
                 cfg.key,
@@ -312,12 +302,8 @@ fun SettingsScreen(
             ) { v ->
                 updateCfg { c -> c.copy(key = v, verified = false) }
             }
-            if (prov != AiProvider.CLOUDFLARE) {
-                LabeledField("آدرس Endpoint", cfg.endpoint, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)) { v ->
-                    updateCfg { c -> c.copy(endpoint = v, verified = false) }
-                }
-            } else {
-                SubTitle("Endpoint رسمی Cloudflare به‌صورت خودکار از Account ID ساخته می‌شود؛ آن را دستی تغییر ندهید.")
+            LabeledField("آدرس Endpoint", cfg.endpoint, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)) { v ->
+                updateCfg { c -> c.copy(endpoint = v, verified = false) }
             }
 
             FlowRow(
