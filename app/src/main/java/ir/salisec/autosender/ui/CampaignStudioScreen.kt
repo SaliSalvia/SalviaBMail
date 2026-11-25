@@ -1,5 +1,6 @@
 package ir.salisec.autosender.ui
 
+import android.content.ClipboardManager
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
@@ -38,6 +39,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Email
@@ -135,6 +137,7 @@ fun CampaignStudioScreen(
     var step by remember { mutableIntStateOf(if (drafts.isNotEmpty()) 1 else 0) }
     var scanning by remember { mutableStateOf(false) }
     var scanError by remember { mutableStateOf<String?>(null) }
+    var clipboardNotice by remember { mutableStateOf<Pair<Boolean, String>?>(null) }
     var scanJob by remember { mutableStateOf<Job?>(null) }
     var sitestUri by remember { mutableStateOf(app.prefs.load().sitestFolderUri) }
     var matchSearch by remember { mutableStateOf("") }
@@ -742,10 +745,11 @@ fun CampaignStudioScreen(
         }
 
         if (step == 0) {
+            val uniqueDomainCount = remember(contacts) { contacts.map { it.domain }.distinct().size }
             Section(
                 header = "ورود گروهی آدرس ایمیل‌ها (هر سطر یک ایمیل)",
                 icon = Icons.Default.Email,
-                badge = if (contacts.isNotEmpty()) "${contacts.size} ایمیل" else null,
+                badge = if (contacts.isNotEmpty()) "${contacts.size} ایمیل • $uniqueDomainCount دامنه" else null,
                 badgeColor = GreenOk
             ) {
                 SubTitle("آدرس‌های ایمیل هدف را به صورت گروهی (هر ایمیل در یک سطر) اینجا وارد یا Paste کنید؛ همچنین فرمت CSV یا ورود از فایل پشتیبانی می‌شود.")
@@ -769,6 +773,27 @@ fun CampaignStudioScreen(
                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                     )
                 )
+                OutlinedButton(
+                    onClick = {
+                        val clipboard = context.getSystemService(ClipboardManager::class.java)
+                        val pasted = clipboard?.primaryClip?.getItemAt(0)
+                            ?.coerceToText(context)?.toString().orEmpty().trim()
+                        if (pasted.isBlank()) {
+                            clipboardNotice = false to "کلیپ‌بورد خالی است یا متن معتبری ندارد."
+                        } else {
+                            val currentText = app.session.rawEmailsInput.value.trim()
+                            app.session.rawEmailsInput.value =
+                                if (currentText.isBlank()) pasted else "$currentText\n$pasted"
+                            clipboardNotice = true to "متن کلیپ‌بورد به فهرست ورودی اضافه شد؛ آدرس‌ها هنگام اسکن اعتبارسنجی می‌شوند."
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.ContentPaste, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("الصاق فهرست از کلیپ‌بورد")
+                }
+                clipboardNotice?.let { (ok, msg) -> Chip(msg, if (ok) GreenOk else RedErr) }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
