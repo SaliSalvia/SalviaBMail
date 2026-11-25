@@ -9,9 +9,14 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -34,6 +39,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -126,7 +133,11 @@ fun AppShell(app: App) {
         Screen.EmailSetup -> "ورود و تنظیم ایمیل"
     }
 
-    Scaffold(
+    val showMainNav = current != Screen.Settings && current != Screen.EmailSetup
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val useRail = maxWidth >= 600.dp && showMainNav
+
+        Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
             TopAppBar(
@@ -177,7 +188,7 @@ fun AppShell(app: App) {
             )
         },
         bottomBar = {
-            if (current != Screen.Settings && current != Screen.EmailSetup) {
+            if (showMainNav && !useRail) {
                 NavigationBar(
                     containerColor = MaterialTheme.colorScheme.surface,
                     tonalElevation = 4.dp
@@ -269,30 +280,102 @@ fun AppShell(app: App) {
                 }
             }
         }
-    ) { innerPadding ->
-        Box(modifier = Modifier.padding(innerPadding)) {
-            when (current) {
-                Screen.Home -> HomeScreen(app = app, go = { navigate(it) })
-                Screen.Campaign -> CampaignStudioScreen(
-                    app = app,
-                    onOpenSettings = { navigate(Screen.Settings) },
-                    onGoToSend = { navigate(Screen.Send) }
-                )
-                Screen.Send -> SendScreen(app = app, onOpenSettings = { navigate(Screen.Settings) })
-                Screen.PipelineInbox -> PipelineInboxScreen(app = app, onOpenSettings = { navigate(Screen.Settings) })
-                Screen.Settings -> SettingsScreen(
-                    app = app,
-                    onBack = { current = previousTab },
-                    onOpenEmailSetup = { navigate(Screen.EmailSetup) }
-                )
-                Screen.EmailSetup -> EmailSetupWizard(
-                    app = app,
-                    isFirstRun = firstRunSetup,
-                    onDone = {
-                        firstRunSetup = false
-                        current = if (previousTab == Screen.EmailSetup) Screen.Home else previousTab
+        ) { innerPadding ->
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                if (useRail) {
+                    NavigationRail(containerColor = MaterialTheme.colorScheme.surface) {
+                        Spacer(Modifier.size(8.dp))
+                        NavigationRailItem(
+                            selected = current == Screen.Home,
+                            onClick = { navigate(Screen.Home) },
+                            icon = {
+                                Icon(
+                                    if (current == Screen.Home) Icons.Filled.Dashboard else Icons.Outlined.Dashboard,
+                                    contentDescription = null
+                                )
+                            },
+                            label = { Text(stringResource(R.string.nav_home), maxLines = 1) },
+                            modifier = Modifier.testTag("nav_home")
+                        )
+                        NavigationRailItem(
+                            selected = current == Screen.Campaign,
+                            onClick = { navigate(Screen.Campaign) },
+                            icon = {
+                                Icon(
+                                    if (current == Screen.Campaign) Icons.Filled.AutoAwesome else Icons.Outlined.AutoAwesome,
+                                    contentDescription = null
+                                )
+                            },
+                            label = { Text(stringResource(R.string.nav_campaign), maxLines = 1) },
+                            modifier = Modifier.testTag("nav_campaign")
+                        )
+                        NavigationRailItem(
+                            selected = current == Screen.Send,
+                            onClick = { navigate(Screen.Send) },
+                            icon = {
+                                BadgedBox(
+                                    badge = {
+                                        if (pendingCount > 0) Badge { Text(pendingCount.toString()) }
+                                    }
+                                ) {
+                                    Icon(
+                                        if (current == Screen.Send) Icons.Filled.Outbox else Icons.Outlined.Outbox,
+                                        contentDescription = null
+                                    )
+                                }
+                            },
+                            label = { Text(stringResource(R.string.nav_send), maxLines = 1) },
+                            modifier = Modifier.testTag("nav_send")
+                        )
+                        NavigationRailItem(
+                            selected = current == Screen.PipelineInbox,
+                            onClick = { navigate(Screen.PipelineInbox) },
+                            icon = {
+                                Icon(
+                                    if (current == Screen.PipelineInbox) Icons.Filled.Forum else Icons.Outlined.Forum,
+                                    contentDescription = null
+                                )
+                            },
+                            label = { Text(stringResource(R.string.nav_pipeline_tab), maxLines = 1) },
+                            modifier = Modifier.testTag("nav_pipeline")
+                        )
                     }
-                )
+                }
+                Box(modifier = Modifier.weight(1f).fillMaxSize()) {
+                    Crossfade(
+                        targetState = current,
+                        animationSpec = tween(180),
+                        label = "screen_crossfade"
+                    ) { screen ->
+                        when (screen) {
+                            Screen.Home -> HomeScreen(app = app, go = { navigate(it) })
+                            Screen.Campaign -> CampaignStudioScreen(
+                                app = app,
+                                onOpenSettings = { navigate(Screen.Settings) },
+                                onGoToSend = { navigate(Screen.Send) }
+                            )
+                            Screen.Send -> SendScreen(app = app, onOpenSettings = { navigate(Screen.Settings) })
+                            Screen.PipelineInbox -> PipelineInboxScreen(app = app, onOpenSettings = { navigate(Screen.Settings) })
+                            Screen.Settings -> SettingsScreen(
+                                app = app,
+                                onBack = { current = previousTab },
+                                onOpenEmailSetup = { navigate(Screen.EmailSetup) }
+                            )
+                            Screen.EmailSetup -> EmailSetupWizard(
+                                app = app,
+                                isFirstRun = firstRunSetup,
+                                onDone = {
+                                    firstRunSetup = false
+                                    current = if (previousTab == Screen.EmailSetup) Screen.Home else previousTab
+                                }
+                            )
+                        }
+                    }
+                }
             }
         }
     }
