@@ -79,7 +79,7 @@ enum class AiProvider(
         keyUrl = "https://dash.cloudflare.com/profile/api-tokens",
         freeTier = false,
         fallbackModel = "@cf/meta/llama-3.1-8b-instruct",
-        hint = "برای اتصال، API Token با مجوز Workers AI Read یا Workers AI Write و Account ID لازم است. فهرست مدل‌های Text Generation به‌صورت زنده از حساب Cloudflare دریافت و مدل‌های واقعاً پاسخ‌گو آزمایش می‌شوند؛ قیمت و سهمیه به حساب و طرح Cloudflare بستگی دارد."
+        hint = "برای اتصال، Account ID و API Token حساب Cloudflare لازم است. برای سازگاری با راهنمای رسمی REST، از قالب Workers AI API Token استفاده کن یا توکنی با دسترسی Workers AI Read و Workers AI Edit بساز. فهرست مدل‌های Text Generation به‌صورت زنده از حساب Cloudflare دریافت و مدل‌های واقعاً پاسخ‌گو آزمایش می‌شوند؛ قیمت و سهمیه به حساب و طرح Cloudflare بستگی دارد."
     );
 
     companion object {
