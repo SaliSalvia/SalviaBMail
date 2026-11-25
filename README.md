@@ -30,7 +30,7 @@
 > 🗺️ نقشه راه «محصول کلاس جهانی / آماده انتشار»: **[docs/WORLD_CLASS_ROADMAP.md](docs/WORLD_CLASS_ROADMAP.md)**
 > ✅ [چکلیست Go/No-Go](docs/RELEASE_CHECKLIST.md) · [تاریخچه](CHANGELOG.md) · [امنیت](SECURITY.md) · [حریم خصوصی FA/EN](PRIVACY.md) · [مشارکت](CONTRIBUTING.md)
 
-**وضعیت کاندید (versionName `2.0.3` / versionCode `6`):** اصلاحات hardening نهایی در PR مستقل هستند و باید CI تست، lint، APK و AAB آن را تأیید کند؛ نصب و آزمون روی دستگاه واقعی Android 16 هنوز انجام نشده است. `compileSdk/targetSdk = 36`،
+**وضعیت کاندید (versionName `2.0.4` / versionCode `7`):** اصلاحات hardening نهایی در PR مستقل هستند و باید CI تست، lint، APK و AAB آن را تأیید کند؛ نصب و آزمون روی دستگاه واقعی Android 16 هنوز انجام نشده است. `compileSdk/targetSdk = 36`،
 بیلد CI شامل تست واحد + lint + R8 release + AAB، صف ارسال idempotent با قفل/lease، لاگ بدون PII با نگهداری خودکار ۹۰روزه،
 `allowBackup=false` + `dataExtractionRules`، «پاکسازی کامل دادهها» داخل تنظیمات، و داشبورد کاری با
 **یک دکمه ارسال گروهی** (فقط پیامهای تأییدشده).
@@ -63,6 +63,8 @@
 - فقط با هر چهار secret امضای تولیدی: `SaliBussiness.apk` و `SaliBussiness.aab` (امضاشده).
 - بدون secretهای امضا: `SaliBussiness-unsigned-release.apk` و `SaliBussiness-unsigned-release.aab`؛ این فایلها فقط برای اعتبارسنجی build هستند و برای نصب/آپلود Play مناسب نیستند.
 
+**ساخت کلید امضای Release از Termux:** پس از قرارگرفتن روی ریپوی اصلی، با `bash setup-salvia-signing.sh` یک keystore جدید بساز و چهار GitHub Secret موردنیاز Workflow را با نام دقیق `SALI_KEYSTORE_BASE64`، `SALI_KEYSTORE_PASSWORD`، `SALI_KEY_ALIAS` و `SALI_KEY_PASSWORD` تنظیم کن. فایل keystore و رمزها را خارج از Git و در دو محل امن پشتیبان بگیر؛ از دست‌رفتن کلید می‌تواند انتشار به‌روزرسانی همان اپ را ناممکن کند. اسکریپت برای جلوگیری از شکستن امضای نسخه‌های موجود، در صورت یافتن حتی یکی از چهار Secret قبلی از ساخت/جایگزینی کلید خودداری می‌کند.
+
 **قانون انتشار نسخه‌ای:** روی `main`، PR و `workflow_dispatch` فقط CI و Artifactهای Actions ساخته می‌شوند؛ این اجراها Release ایجاد یا تگ `latest` را جابه‌جا نمی‌کنند. توجه: Release تاریخی `v2.0.2` فعلاً asset ندارد و `latest` قدیمی شامل APK دیباگ از pipeline قبلی است؛ برای دریافت نسخه قابل توزیع، تا انتشار تگ نسخه‌ای جدید و تأیید assetها به این دو Release تکیه نکن. انتشار GitHub Release فقط با push تگ تغییرناپذیر `vX.Y.Z` انجام می‌شود و workflow بررسی می‌کند که بخش نسخه تگ دقیقاً با `versionName` در `app/build.gradle.kts` برابر باشد. هر چهار secret امضای تولیدی برای تگ نسخه‌ای الزامی‌اند؛ در نبود یا ناقص بودن آن‌ها انتشار fail می‌شود. Release نسخه‌ای شامل APK و AAB امضاشده و `SHA256SUMS.txt` است؛ APK دیباگ فقط در Artifactهای CI می‌ماند. GitHub بر اساس `make_latest: true` آخرین Release نسخه‌ای را به‌عنوان Latest علامت می‌زند. تگ قدیمی `latest` صرفاً تاریخی است و نباید برای انتشار نسخه جدید استفاده شود. روند کامل: [docs/RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md).
 - هنگام شکست، artifact `build-logs` حاوی `checks.log` / `build.log` / `release.log` و گزارشهای lint/test آپلود میشود.
 - ابزار ساخت pin شده است (`build.gradle.kts` + `gradle/wrapper/gradle-wrapper.properties`)؛
@@ -82,7 +84,7 @@
 - پیش از هر ارسال: opt-out، گیت صحت، شواهد و پیوستها دوباره بررسی میشوند.
 
 ## شروع سریع
-1. کلید Brevo، کلید هوش مصنوعی و App Password ایمیل را در تنظیمات وارد و ذخیره کن. هوش مصنوعی یکی از این‌هاست: hcnsec، **Google AI Studio (Gemini)**، **Groq** یا **OpenRouter** (فقط مدل‌های `:free`) — برای سه مورد آخر سطح رایگان روزانه کافی است؛ با «سنجش API و انتخاب قوی‌ترین مدل» بهترین مدل در دسترس خودکار انتخاب می‌شود و با روشن بودن فال‌بک، وقتی سهمیهٔ روزانهٔ یک مدل/پرووایدر تمام شود برنامه سراغ بعدی می‌رود.
+1. کلید Brevo، کلید هوش مصنوعی و App Password ایمیل را در تنظیمات وارد و ذخیره کن. هوش مصنوعی یکی از این‌هاست: hcnsec، **Google AI Studio (Gemini)**، **Groq**، **OpenRouter** (فقط مدل‌های `:free`) — برای Gemini، Groq و OpenRouter می‌توان از مدل‌های رایگان و سهمیه‌های متغیرشان استفاده کرد. با «سنجش API و انتخاب قوی‌ترین مدل» بهترین مدل واقعاً در دسترس خودکار انتخاب می‌شود و با روشن بودن فال‌بک، وقتی سهمیهٔ روزانهٔ یک مدل/پرووایدر تمام شود برنامه سراغ بعدی می‌رود.
 2. پوشه `sitest` را یکبار با SAF انتخاب کن (کنار هر PDF بهتر است فایل `*.json` sidecar باشد: [نمونه](examples/sidecar.example.json)).
 3. جریان ۵ مرحلهای: دامنهها ← مخاطبان ← گزارشها ← تولید/بازبینی/تأیید ← ارسال.
 4. در داشبورد یا صف ارسال، «ارسال همه پیامهای تأییدشده» را بزن و دیالوگ را تأیید کن.

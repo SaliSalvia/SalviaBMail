@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -75,6 +76,7 @@ fun SendScreen(app: App, onOpenSettings: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val state by app.engine.state.collectAsState()
+    val queueVersion by app.engine.queueVersion.collectAsState()
     val deliverability by app.session.deliverability.collectAsState()
     var queue by remember { mutableStateOf(listOf<MessageEntity>()) }
     var showSendConfirm by remember { mutableStateOf(false) }
@@ -83,6 +85,7 @@ fun SendScreen(app: App, onOpenSettings: () -> Unit) {
     var checkingDns by remember { mutableStateOf(false) }
     var copiedRecordNotice by remember { mutableStateOf<String?>(null) }
     var exportNotice by remember { mutableStateOf<Pair<Boolean, String>?>(null) }
+    var onlyErrorLogs by remember { mutableStateOf(false) }
 
     val settings = remember(state.running) { app.prefs.load() }
     val senderConfigured = settings.hasOutgoingConfigured()
@@ -128,7 +131,7 @@ fun SendScreen(app: App, onOpenSettings: () -> Unit) {
             runDeliverabilityChecks()
         }
     }
-    LaunchedEffect(state.sent, state.failed, state.skipped, state.running) { reload() }
+    LaunchedEffect(queueVersion, state.sent, state.failed, state.skipped, state.running) { reload() }
 
     // Live 1-second countdown ticker while waiting between sends
     LaunchedEffect(state.waitingUntil) {
@@ -165,6 +168,11 @@ fun SendScreen(app: App, onOpenSettings: () -> Unit) {
 
     val pending = queue.count {
         it.status == MessageState.APPROVED || it.status == MessageState.QUEUED
+    }
+    val retryableFailed = queue.filter { it.status == MessageState.FAILED }
+    val shownLogs = remember(state.logs, onlyErrorLogs) {
+        val base = if (onlyErrorLogs) state.logs.filter { !it.ok } else state.logs
+        base.take(40)
     }
 
     ScreenScaffold {
@@ -267,6 +275,32 @@ fun SendScreen(app: App, onOpenSettings: () -> Unit) {
 
         if (queue.isNotEmpty()) {
             Section(header = stringResource(R.string.send_messages), icon = Icons.AutoMirrored.Filled.Send) {
+                if (retryableFailed.isNotEmpty()) {
+                    OutlinedButton(
+                        onClick = {
+                            scope.launch {
+                                val now = System.currentTimeMillis()
+                                retryableFailed.forEach { m ->
+                                    app.db.messageDao().update(
+                                        m.copy(
+                                            status = MessageState.QUEUED,
+                                            attempts = 0,
+                                            lastError = null,
+                                            updatedAt = now
+                                        )
+                                    )
+                                }
+                                app.engine.notifyQueueChanged()
+                                reload()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("تلاش مجدد همه ناموفق‌های قطعی (${retryableFailed.size})")
+                    }
+                }
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     queue.take(100).forEach { m ->
                         Surface(
@@ -373,8 +407,20 @@ fun SendScreen(app: App, onOpenSettings: () -> Unit) {
 
         if (state.logs.isNotEmpty()) {
             Section(header = stringResource(R.string.send_activity), icon = Icons.Default.Outbox) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = !onlyErrorLogs,
+                        onClick = { onlyErrorLogs = false },
+                        label = { Text("همه رویدادها") }
+                    )
+                    FilterChip(
+                        selected = onlyErrorLogs,
+                        onClick = { onlyErrorLogs = true },
+                        label = { Text("فقط خطاها (${state.logs.count { !it.ok }})") }
+                    )
+                }
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    state.logs.take(40).forEach { l ->
+                    shownLogs.forEach { l ->
                         val time = SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(l.ts))
                         Text(
                             "$time  ${if (l.ok) "✓" else "!"}  ${ltrIsolate(l.domain)}  ${ltrIsolate(l.email)}  —  ${l.message}",

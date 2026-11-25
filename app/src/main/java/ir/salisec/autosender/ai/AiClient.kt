@@ -110,6 +110,9 @@ class AiClient(private val client: OkHttpClient) {
         }
     }
 
+    private fun resolveChatEndpoint(provider: AiProvider, cfg: ProviderConfig): String =
+        cfg.endpoint.ifBlank { provider.defaultEndpoint }
+
     /**
      * Queries GET /models of [provider], ranks all chat models by capability (OpenRouter: free models
      * only) and probes the top candidates with a minimal chat call, so the strongest model that
@@ -124,9 +127,10 @@ class AiClient(private val client: OkHttpClient) {
             return@withContext Result.failure(IllegalStateException("کلید API ${provider.title} وارد نشده است"))
         }
         try {
-            val endpoint = cfg.endpoint.ifBlank { provider.defaultEndpoint }
+            val endpoint = resolveChatEndpoint(provider, cfg)
+            val modelsUrl = modelsEndpoint(endpoint)
             val reqBuilder = Request.Builder()
-                .url(modelsEndpoint(endpoint))
+                .url(modelsUrl)
                 .header("Authorization", "Bearer " + cfg.key.trim())
             if (provider == AiProvider.OPENROUTER) reqBuilder.header("X-Title", APP_TITLE)
             val rawModels = client.newBuilder()
@@ -561,7 +565,7 @@ class AiClient(private val client: OkHttpClient) {
                     lastDraftError = e
                     // Bad API key: no other model of THIS provider can succeed, but another provider might
                     val msg = e.message.orEmpty()
-                    if (msg.contains("HTTP 401") || msg.contains("HTTP 403")) continue@providerLoop
+                    if (shouldSkipProviderForHttpError(prov, msg)) continue@providerLoop
                 }
             }
         }
@@ -841,6 +845,11 @@ ${untrustedSourceBoundary()}"""
         .put(JSONObject().put("role", "system").put("content", system))
         .put(JSONObject().put("role", "user").put("content", user))
 
+    internal fun shouldSkipProviderForHttpError(provider: AiProvider, message: String): Boolean {
+        val normalized = message.lowercase()
+        return "http 401" in normalized || "http 403" in normalized
+    }
+
     private suspend fun callModel(
         s: Settings,
         provider: AiProvider,
@@ -851,7 +860,7 @@ ${untrustedSourceBoundary()}"""
     ): ModelCallOutput {
         val cfg = s.config(provider)
         if (cfg.key.isBlank()) throw RuntimeException("کلید ${provider.title} در تنظیمات وارد نشده است")
-        val endpoint = cfg.endpoint.ifBlank { provider.defaultEndpoint }
+        val endpoint = resolveChatEndpoint(provider, cfg)
         val temp = effectiveTemperature(provider, model, temperature)
         val tokens = effectiveMaxTokens(provider, model, maxTokens)
         val timedClient = client.newBuilder()

@@ -66,11 +66,15 @@ import java.util.Locale
 fun HomeScreen(app: App, go: (Screen) -> Unit) {
     val scope = rememberCoroutineScope()
     val sendState by app.engine.state.collectAsState()
+    val queueVersion by app.engine.queueVersion.collectAsState()
     val contacts by app.session.contacts.collectAsState()
     val matches by app.session.matches.collectAsState()
     val deliverability by app.session.deliverability.collectAsState()
     var pendingCount by remember { mutableIntStateOf(0) }
     var sentTotal by remember { mutableIntStateOf(0) }
+    var repliedOrNegotiating by remember { mutableIntStateOf(0) }
+    var dueFollowUps by remember { mutableIntStateOf(0) }
+    var paidCount by remember { mutableIntStateOf(0) }
     var totalTokens by remember { mutableIntStateOf(0) }
     var showSendConfirm by remember { mutableStateOf(false) }
     val settings = remember(sendState.running) { app.prefs.load() }
@@ -78,14 +82,22 @@ fun HomeScreen(app: App, go: (Screen) -> Unit) {
     fun refreshStats() {
         scope.launch {
             val all = app.db.messageDao().all()
+            val nowMs = System.currentTimeMillis()
             pendingCount = all.count { it.status == "APPROVED" || it.status == "QUEUED" }
             sentTotal = all.count { it.status == "SENT" }
+            repliedOrNegotiating = all.count { it.pipelineState == "REPLIED" || it.pipelineState == "NEGOTIATING" }
+            dueFollowUps = all.count {
+                it.status == "SENT" && it.pipelineState == "SENT" &&
+                    it.followUpAt != null && it.followUpAt <= nowMs &&
+                    !app.prefs.isSuppressed(it.email, it.domain)
+            }
+            paidCount = all.count { it.pipelineState == "PAID" }
             totalTokens = all.sumOf { it.promptTokens + it.completionTokens }
         }
     }
 
     LaunchedEffect(Unit) { refreshStats() }
-    LaunchedEffect(sendState.sent, sendState.failed, sendState.skipped, sendState.running, contacts.size) {
+    LaunchedEffect(queueVersion, sendState.sent, sendState.failed, sendState.skipped, sendState.running, contacts.size) {
         refreshStats()
     }
 
@@ -115,6 +127,9 @@ fun HomeScreen(app: App, go: (Screen) -> Unit) {
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
                     )
+                }
+                if (paidCount > 0) {
+                    Chip("فروش موفق: $paidCount", GreenOk, onClick = { go(Screen.PipelineInbox) })
                 }
             }
 
@@ -173,6 +188,19 @@ fun HomeScreen(app: App, go: (Screen) -> Unit) {
                 MetricTile("ارسال‌شده", sentTotal.toString(), Modifier.weight(1f))
                 if (totalTokens > 0) {
                     MetricTile("توکن کل", totalTokens.toString(), Modifier.weight(1f))
+                }
+            }
+            if (repliedOrNegotiating > 0 || dueFollowUps > 0 || paidCount > 0) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (repliedOrNegotiating > 0) {
+                        Chip("پاسخ/مذاکره: $repliedOrNegotiating", OrangeWarn, onClick = { go(Screen.PipelineInbox) })
+                    }
+                    if (dueFollowUps > 0) {
+                        Chip("پیگیری سررسید: $dueFollowUps", OrangeWarn, onClick = { go(Screen.PipelineInbox) })
+                    }
+                    if (paidCount > 0) {
+                        Chip("پرداخت موفق: $paidCount", GreenOk, onClick = { go(Screen.PipelineInbox) })
+                    }
                 }
             }
 

@@ -4,7 +4,7 @@
 نسخه چکلیست: ۱٫۲ · ۲۰۲۶-۱۱-۱۸ · مرتبط با [`WORLD_CLASS_ROADMAP.md`](WORLD_CLASS_ROADMAP.md) · [`CHANGELOG.md`](../CHANGELOG.md)
 
 > ## 🔴 تصمیم فعلی: **No-Go برای انتشار عمومی / Play**
-> Candidate نهایی سخت‌سازی `2.0.3` / versionCode 6 (این PR هنوز CI نشده است)؛ فاز ۰ و بخش بزرگی از فاز ۱–۴ اجرا شده (بیلد سبز، تست واحد، idempotency، lease، migration،
+> Candidate نهایی سخت‌سازی `2.0.4` / versionCode 7 (این PR هنوز CI نشده است)؛ فاز ۰ و بخش بزرگی از فاز ۱–۴ اجرا شده (بیلد سبز، تست واحد، idempotency، lease، migration،
 > API 36، بکاپ/شبکه، R8، PRIVACY/SECURITY، AAB در CI)، ولی بندهای P0 زیر همچنان بازاند:
 > Golden Set واقعی، وبحوک bounce/complaint، تأیید SPF/DKIM/DMARC، رضایت مستند بهازای هر مخاطب،
 > Play App Signing، انتشار مرحلهای و تست دستگاه Android 16. «حذف همه دادهها» داخل اپ اکنون پیادهسازی شده است.
@@ -44,7 +44,7 @@
 - [x] `allowBackup=false` **و** `@xml/data_extraction_rules` (Android 12+ cloud backup / device transfer هر دو `exclude domain="root"`)
 - [x] `network_security_config` نصب شد؛ cleartext غیرفعال؛ `android:exported` بررسی شد
 - [x] هیچ کلید API / ایمیل خام / متنی در لاگ، پیام خطا یا artifact نیست (`PrivacyRedactorTest` + ماسک لاگ/export)
-- [x] [`PRIVACY.md`](../PRIVACY.md) (FA/EN) منتشر شد؛ موجودی داده و طرفهای سوم (hcnsec/You.com/Brevo/IMAP) درج شد
+- [x] [`PRIVACY.md`](../PRIVACY.md) (FA/EN) منتشر شد؛ موجودی داده و طرفهای سوم (hcnsec/Gemini/Groq/OpenRouter/You.com/Brevo/IMAP) درج شد
 - [x] [`SECURITY.md`](../SECURITY.md) و مسیر گزارش خصوصی موجود است
 - [x] «پاکسازی کامل دادههای اپ» داخل تنظیمات با دیالوگ تأیید: صف ارسال ابتدا لغو می‌شود؛ `messages` / `logs` / `campaigns` / `studio_drafts` / `company_cache` / `pdf_cache`، prefs رمزنگاریشده و session پاک می‌شوند و دسترسی پایدار SAF آزاد می‌شود (`App.clearAllData`)
 - [x] ذخیره متن PDF در cache محلی `pdf_cache` در خط‌مشی حریم خصوصی افشا شده است؛ Room به‌صورت مستقل با SQLCipher رمز نشده است
@@ -57,7 +57,7 @@
 - [x] تست واحد منطق دامنه: ContactsParser / DomainValidator / QualityGate / AttachmentPolicy / AttachmentGuard / MessageState / PrivacyRedactor / GoldenSet
 - [ ] پوشش تست ≥ ۷۰٪ اندازهگیری شود؛ `detekt`/`ktlint` اضافه شود
 - [ ] `libs.versions.toml`؛ `kapt` → KSP؛ `security-crypto` پایدار
-- [ ] `versionCode = 6` / `versionName = 2.0.3` و `CHANGELOG.md` همخوان هستند؛ پس از CI سبز تأیید شود
+- [ ] `versionCode = 7` / `versionName = 2.0.4` و `CHANGELOG.md` همخوان هستند؛ پس از CI سبز تأیید شود
 - [x] `isMinifyEnabled=true` + `isShrinkResources=true` و قواعد R8 در بیلد release CI تأیید میشوند
 - [x] Migration واقعی `MIGRATION_2_3` اضافه شد (fallback فقط برای نصبهای pre-v2 توسعهدهنده)
 - [ ] `MigrationTestHelper` و SBOM / بررسی CVE
@@ -79,7 +79,7 @@
 
 ## ۶. عملیات و مشاهدهپذیری (P1)
 - [ ] لاگ ساختاریافته: `errorCode`, `providerMessageId`, `attempt`, `durationMs`, `costTokens`
-- [ ] داشبورد سلامت + هشدار اتمام اعتبار hcnsec/You.com + سقف هزینه
+- [ ] داشبورد سلامت + هشدار اتمام اعتبار همه پرووایدرهای AI/You.com + سقف هزینه
 - [ ] Crash/ANR reporting **با رضایت و بدون PII**
 - [x] Kill switch ارسال (مکث / لغو صف) و توقف کامل سرویس در دسترس است
 - [ ] Runbook حوادث: ارسال تکراری / کلید منقضی / سقف Brevo / بلاک دامنه

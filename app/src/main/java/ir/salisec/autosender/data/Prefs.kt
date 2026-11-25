@@ -126,7 +126,10 @@ data class Settings(
      */
     fun aiProviderChain(): List<AiProvider> {
         val active = provider()
-        val keyed = AiProvider.values().filter { config(it).key.isNotBlank() }
+        val keyed = AiProvider.values().filter { p ->
+            val c = config(p)
+            c.key.isNotBlank()
+        }
         return if (aiFallbackEnabled) {
             keyed.filter { it == active } + keyed.filter { it != active }
         } else {
@@ -149,6 +152,14 @@ data class Settings(
 
 class Prefs(context: Context) {
     private val sp: SharedPreferences = createSecurePrefs(context.applicationContext)
+
+    init {
+        // Remove legacy Cloudflare Workers AI credentials/configuration from encrypted storage.
+        sp.edit().remove("cloudflare.key").remove("cloudflare.accountId")
+            .remove("cloudflare.endpoint").remove("cloudflare.model")
+            .remove("cloudflare.reviewModel").remove("cloudflare.verified")
+            .remove("cloudflare.availableModels").apply()
+    }
 
     private fun createSecurePrefs(context: Context): SharedPreferences {
         fun buildEncrypted(): SharedPreferences = EncryptedSharedPreferences.create(

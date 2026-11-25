@@ -243,7 +243,7 @@ fun SettingsScreen(
         }
         k9Notice?.let { (ok, msg) -> Chip(msg, if (ok) GreenOk else RedErr) }
 
-        // 1. AI provider (hcnsec / Google AI Studio / Groq / OpenRouter) + auto strongest (free) model probe
+        // 1. AI provider (hcnsec / Google AI Studio / Groq / OpenRouter) + live model probe
         val prov = s.provider()
         val cfg = s.config(prov)
         fun updateCfg(change: (ProviderConfig) -> ProviderConfig) {
@@ -253,10 +253,10 @@ fun SettingsScreen(
         Section(
             header = "۱. هوش مصنوعی (انتخاب پرووایدر)",
             icon = Icons.Default.AutoAwesome,
-            badge = if (cfg.verified && cfg.model.isNotBlank()) cfg.model else if (cfg.key.isNotBlank()) "کلید ثبت شد" else "نیاز به کلید",
+            badge = if (cfg.verified && cfg.model.isNotBlank()) cfg.model else if (cfg.key.isNotBlank()) "اتصال آماده" else "نیاز به کلید/شناسه",
             badgeColor = if (cfg.verified) GreenOk else if (cfg.key.isNotBlank()) OrangeWarn else RedErr
         ) {
-            SubTitle("پرووایدر فعال را انتخاب کنید؛ برای هر پرووایدر کلید و مدل جدا ذخیره می‌شود. هر پرووایدری که کلید داشته باشد در فال‌بک خودکار شرکت می‌کند.")
+            SubTitle("پرووایدر فعال را انتخاب کنید؛ برای هر پرووایدر کلید و مدل جدا ذخیره می‌شود. فقط پرووایدرهای دارای اطلاعات کامل اتصال در فال‌بک خودکار شرکت می‌کنند.")
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -269,7 +269,11 @@ fun SettingsScreen(
                             saved = false
                             aiStatus = null
                         },
-                        label = { Text(p.shortName + if (s.config(p).key.isNotBlank()) " ✓" else "") }
+                        label = {
+                            val pc = s.config(p)
+                            val ready = pc.key.isNotBlank()
+                            Text(p.shortName + if (ready) " ✓" else "")
+                        }
                     )
                 }
             }
@@ -286,7 +290,7 @@ fun SettingsScreen(
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("دریافت کلید رایگان ${prov.shortName}")
+                    Text(if (prov.freeTier) "دریافت کلید رایگان ${prov.shortName}" else "دریافت API Token ${prov.shortName}")
                 }
             }
 

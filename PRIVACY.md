@@ -1,6 +1,6 @@
 #Privacy Policy / خطمشی حریم خصوصی — SaliBussiness
 
-**آخرین بهروزرسانی / Last updated:** 2026-11-18 · **نسخه اپ / App version:** 2.0.3 candidate (versionCode 6)
+**آخرین بهروزرسانی / Last updated:** 2026-11-25 · **نسخه اپ / App version:** 2.0.4 candidate (versionCode 7)
 
 ---
 
@@ -21,7 +21,7 @@ SaliBussiness یک ابزار **روی دستگاه خود شما** است. **ه
 
 ### ۳. طرفهای ثالث (فقط در صورتیکه خودتان کلید وارد کنید)
 - **Brevo** (`api.brevo.com`) — تحویل ایمیل تراکنشی؛ گیرنده، موضوع، متن و دو پیوست trial را دریافت میکند. یک UUID پایدار بهعنوان `headers.idempotencyKey` ارسال میشود تا ارسال تکراری رخ ندهد.
-- **ارائه‌دهنده هوش مصنوعی (فقط یکی یا چند تا از موارد زیر، هر کدام که کلیدش را وارد کنید)** — تولید/ویراستاری متن؛ **فقط شواهد همان گزارش** (نه لیست مخاطبان) را دریافت می‌کند: **hcnsec** (`api.hcnsec.cn`)، **Google AI Studio / Gemini** (`generativelanguage.googleapis.com`)، **Groq** (`api.groq.com`) و **OpenRouter** (`openrouter.ai`، فقط مدل‌های `:free`). ⚠️ در سطح رایگان، برخی ارائه‌دهندگان (از جمله Google AI Studio و بعضی مدل‌های رایگان OpenRouter) ممکن است ورودی را ثبت کنند یا برای بهبود/آموزش مدل استفاده کنند؛ اگر شواهد گزارش حساس است، از پرووایدر پولی با سیاست عدم‌آموزش استفاده کنید یا فال‌بک خودکار را خاموش کنید.
+- **ارائه‌دهنده هوش مصنوعی (فقط یکی یا چند تا از موارد زیر، هر کدام که کلیدش را وارد کنید)** — تولید/ویراستاری متن؛ **فقط شواهد همان گزارش** (نه لیست مخاطبان) را دریافت می‌کند: **hcnsec** (`api.hcnsec.cn`)، **Google AI Studio / Gemini** (`generativelanguage.googleapis.com`)، **Groq** (`api.groq.com`)، **OpenRouter** (`openrouter.ai`، فقط مدل‌های `:free`) ⚠️ در سطح رایگان، برخی ارائه‌دهندگان (از جمله Google AI Studio و بعضی مدل‌های رایگان OpenRouter) ممکن است ورودی را ثبت کنند یا برای بهبود/آموزش مدل استفاده کنند؛ اگر شواهد گزارش حساس است، از پرووایدر پولی با سیاست عدم‌آموزش استفاده کنید یا فال‌بک خودکار را خاموش کنید.
 - **You.com** (`ydc-index.io`) — فقط جستوجوی زمینه عمومی سطح شرکت برای هر دامنه.
 - **سرور IMAP/SMTP خودتان** — خواندن پاسخها / ارسال از طریق SMTP اختصاصی.
 
@@ -68,7 +68,7 @@ SaliBussiness is an **on-device** tool. There is **no backend operated by us**; 
 
 ### 3. Third parties (only when you supply a key)
 - **Brevo** — email delivery; receives recipient, subject, body and the two trial attachments. A stable UUID is sent as `headers.idempotencyKey` to prevent duplicate sends.
-- **AI provider (one or more of, depending on which keys you enter)** — copy generation; receives **only that report's evidence**, never the contact list: **hcnsec**, **Google AI Studio / Gemini**, **Groq**, **OpenRouter** (`:free` models only). ⚠️ On free tiers some providers (including Google AI Studio and some free OpenRouter models) may log prompts or use them to improve/train models. If the report evidence is sensitive, use a paid provider with a no-training policy, or turn automatic fallback off.
+- **AI provider (one or more of, depending on which keys you enter)** — copy generation; receives **only that report's evidence**, never the contact list: **hcnsec**, **Google AI Studio / Gemini**, **Groq**, **OpenRouter** (`:free` models only) ⚠️ On free tiers some providers (including Google AI Studio and some free OpenRouter models) may log prompts or use them to improve/train models. If the report evidence is sensitive, use a paid provider with a no-training policy, or turn automatic fallback off.
 - **You.com** — public, company-level web context only.
 - **Your own IMAP / SMTP server** — reading replies / optional SMTP delivery.
 
