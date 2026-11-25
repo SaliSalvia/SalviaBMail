@@ -5,6 +5,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -25,6 +26,8 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -189,6 +192,7 @@ private fun PipelineTab(app: App) {
     var draft by remember { mutableStateOf<FollowDraft?>(null) }
     var deleteTarget by remember { mutableStateOf<MessageEntity?>(null) }
     var pipelineFilter by remember { mutableStateOf("ALL") } // ALL | DUE | REPLIED | NEGOTIATING | PAID | LOST
+    var pipelineSearch by remember { mutableStateOf("") }
 
     fun reload() {
         scope.launch { list = app.db.messageDao().all() }
@@ -206,12 +210,6 @@ private fun PipelineTab(app: App) {
         domain = d.original.domain,
         email = d.original.email
     )
-
-    fun cycleState(current: String): String {
-        val order = listOf("SENT", "REPLIED", "NEGOTIATING", "PAID", "LOST")
-        val i = order.indexOf(current)
-        return order[(i + 1).mod(order.size)]
-    }
 
     fun isDueForFollowUp(m: MessageEntity, nowMs: Long = System.currentTimeMillis()): Boolean =
         m.status == "SENT" &&
@@ -354,7 +352,13 @@ private fun PipelineTab(app: App) {
             }
         }
 
-        SubTitle("با کلیک روی «تغییر مرحله» وضعیت سرنخ را به‌روز کنید: SENT → REPLIED → NEGOTIATING → PAID → LOST")
+        LabeledField(
+            label = "جستجو در سرنخ‌ها (دامنه، ایمیل یا موضوع)",
+            value = pipelineSearch,
+            singleLine = true,
+            placeholder = "مثلاً example.com"
+        ) { pipelineSearch = it }
+        SubTitle("برای تغییر مستقیم وضعیت، مرحلهٔ دلخواه را از منوی هر سرنخ انتخاب کنید.")
     }
 
     // A/B Experiment Analytics (Style + Subject Variant + Model + Token usage)
@@ -427,23 +431,35 @@ private fun PipelineTab(app: App) {
     okMsg?.let { Chip(it, GreenOk) }
     if (busy) LoadingBox("در حال تولید ایمیل پیگیری با AI...")
 
-    val filteredList = remember(list, pipelineFilter) {
+    val filteredList = remember(list, pipelineFilter, pipelineSearch) {
         val now = System.currentTimeMillis()
-        when (pipelineFilter) {
+        val stageFiltered = when (pipelineFilter) {
             "DUE" -> list.filter { isDueForFollowUp(it, now) }
             "REPLIED", "NEGOTIATING", "PAID", "LOST" -> list.filter { it.pipelineState == pipelineFilter }
             else -> list
+        }
+        if (pipelineSearch.isBlank()) stageFiltered else stageFiltered.filter { m ->
+            m.domain.contains(pipelineSearch, ignoreCase = true) ||
+                m.email.contains(pipelineSearch, ignoreCase = true) ||
+                m.subject.contains(pipelineSearch, ignoreCase = true)
         }
     }
 
     if (filteredList.isEmpty()) {
         Section(header = "موردی یافت نشد", icon = Icons.AutoMirrored.Filled.TrendingUp) {
-            SubTitle("در این فیلد فعلی موردی نیست یا پس از تأیید و ارسال ایمیل‌ها در کمپین سریع اینجا نمایش داده می‌شوند.")
+            SubTitle(
+                if (list.isEmpty()) "پس از تأیید و ارسال ایمیل‌ها، سرنخ‌ها اینجا نمایش داده می‌شوند."
+                else "برای مشاهدهٔ موارد دیگر، فیلتر یا عبارت جست‌وجو را تغییر دهید."
+            )
+            if (pipelineFilter != "ALL" || pipelineSearch.isNotBlank()) {
+                TextButton(onClick = { pipelineFilter = "ALL"; pipelineSearch = "" }) { Text("نمایش همه سرنخ‌ها") }
+            }
         }
     } else {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             filteredList.forEach { m ->
                 val due = isDueForFollowUp(m, nowMs)
+                var stageMenuOpen by remember(m.messageUuid ?: m.email) { mutableStateOf(false) }
                 Section(
                     header = (if (m.isFollowUp) "پیگیری ${m.followUpStep.coerceAtLeast(1)}: " else "") + ltrIsolate(m.domain),
                     badge = m.pipelineState,
@@ -498,20 +514,42 @@ private fun PipelineTab(app: App) {
                         SubTitle("پیوست: $isolatedNames")
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = {
-                            scope.launch {
-                                val nextState = cycleState(m.pipelineState)
-                                val clearFollow = nextState != "SENT"
-                                app.db.messageDao().update(
-                                    m.copy(
-                                        pipelineState = nextState,
-                                        followUpAt = if (clearFollow) null else m.followUpAt,
-                                        updatedAt = System.currentTimeMillis()
-                                    )
-                                )
-                                reload()
+                        Box {
+                            OutlinedButton(onClick = { stageMenuOpen = true }) {
+                                Text("مرحله: ${m.pipelineState} ▾")
                             }
-                        }) { Text("تغییر مرحله ←") }
+                            DropdownMenu(
+                                expanded = stageMenuOpen,
+                                onDismissRequest = { stageMenuOpen = false }
+                            ) {
+                                listOf(
+                                    "SENT" to "ارسال‌شده",
+                                    "REPLIED" to "پاسخ داده",
+                                    "NEGOTIATING" to "در مذاکره",
+                                    "PAID" to "پرداخت موفق",
+                                    "LOST" to "از دست رفته"
+                                ).forEach { (code, label) ->
+                                    DropdownMenuItem(
+                                        text = { Text(label) },
+                                        onClick = {
+                                            stageMenuOpen = false
+                                            if (code != m.pipelineState) scope.launch {
+                                                val clearFollow = code != "SENT"
+                                                app.db.messageDao().update(
+                                                    m.copy(
+                                                        pipelineState = code,
+                                                        followUpAt = if (clearFollow) null else m.followUpAt,
+                                                        updatedAt = System.currentTimeMillis()
+                                                    )
+                                                )
+                                                app.engine.notifyQueueChanged()
+                                                reload()
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        }
                         if (m.pipelineState in setOf("SENT", "REPLIED", "NEGOTIATING") &&
                             m.status == "SENT" &&
                             !app.prefs.isSuppressed(m.email, m.domain)
