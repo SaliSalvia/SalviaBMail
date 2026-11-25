@@ -4,6 +4,7 @@ import ir.salisec.autosender.data.AiProvider
 import ir.salisec.autosender.data.GOOGLE_CHAT_ENDPOINT
 import ir.salisec.autosender.data.GROQ_CHAT_ENDPOINT
 import ir.salisec.autosender.data.OPENROUTER_CHAT_ENDPOINT
+import ir.salisec.autosender.data.CLOUDFLARE_CHAT_ENDPOINT
 import ir.salisec.autosender.data.ProviderConfig
 import ir.salisec.autosender.data.Settings
 import ir.salisec.autosender.data.normalizeChatEndpoint
@@ -56,6 +57,37 @@ class AiProviderTest {
     }
 
     // ---- provider selection / fallback chain -----------------------------------------------
+
+    @Test fun cloudflareProviderUsesAccountScopedEndpointsAndRequiresAccountId() {
+        assertEquals(
+            "https://api.cloudflare.com/client/v4/accounts/account-123/ai/v1/chat/completions",
+            client.cloudflareChatEndpoint("account-123")
+        )
+        assertEquals(
+            "https://api.cloudflare.com/client/v4/accounts/account-123/ai/models/search?task=Text%20Generation&per_page=100&hide_experimental=true",
+            client.cloudflareModelsEndpoint("account-123")
+        )
+        val models = client.parseModelList(
+            AiProvider.CLOUDFLARE,
+            """{"result":[
+                {"id":"@cf/meta/llama-3.1-8b-instruct","task":{"name":"Text Generation"}},
+                {"name":"meta/llama-3.1-8b-instruct","task":{"name":"Text Generation"}},
+                {"id":"@cf/baai/bge-large-en-v1.5","task":{"name":"Text Embeddings"}},
+                {"id":"@cf/meta/whisper-large-v3","task":{"name":"Automatic Speech Recognition"}}
+            ]}"""
+        )
+        assertEquals(listOf("@cf/meta/llama-3.1-8b-instruct"), models)
+        val valid = Settings(
+            aiProvider = AiProvider.CLOUDFLARE.id,
+            cloudflare = ProviderConfig(key = "token", accountId = "account-123")
+        )
+        assertEquals(listOf(AiProvider.CLOUDFLARE), valid.aiProviderChain())
+        assertTrue(valid.copy(cloudflare = ProviderConfig(key = "token")).aiProviderChain().isEmpty())
+    }
+
+    @Test fun cloudflareDefaultEndpointIsAccountScopedTemplate() {
+        assertTrue(CLOUDFLARE_CHAT_ENDPOINT.contains("{account_id}"))
+    }
 
     @Test fun unknownProviderIdFallsBackToHcnsec() {
         assertEquals(AiProvider.HCNSEC, AiProvider.fromId("nope"))
