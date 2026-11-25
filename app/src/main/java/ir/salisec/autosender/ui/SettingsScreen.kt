@@ -271,7 +271,7 @@ fun SettingsScreen(
                         },
                         label = {
                             val pc = s.config(p)
-                            val ready = pc.key.isNotBlank() && true
+                            val ready = pc.key.isNotBlank()
                             Text(p.shortName + if (ready) " ✓" else "")
                         }
                     )
