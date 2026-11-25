@@ -3,7 +3,6 @@ package ir.salisec.autosender.data
 const val GOOGLE_CHAT_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
 const val GROQ_CHAT_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
 const val OPENROUTER_CHAT_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
-const val CLOUDFLARE_CHAT_ENDPOINT = "https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/v1/chat/completions"
 
 /**
  * Every provider here speaks the OpenAI chat-completions dialect, so one client
@@ -70,18 +69,7 @@ enum class AiProvider(
         fallbackModel = "meta-llama/llama-3.3-70b-instruct:free",
         hint = "فقط مدل‌های رایگان (:free) انتخاب می‌شوند؛ سقف روزانهٔ مشترک برای همهٔ آن‌ها حدود چند ده درخواست است و با شارژ حداقلی حساب بالا می‌رود. اگر خطای data policy / Free model publication دیدید، در تنظیمات Privacy حساب OpenRouter استفاده از مدل‌های رایگان را مجاز کنید. توجه: ارائه‌دهندگان مدل‌های رایگان ممکن است ورودی را ثبت یا برای آموزش استفاده کنند."
     ),
-    CLOUDFLARE(
-        id = "CLOUDFLARE",
-        title = "Cloudflare Workers AI",
-        shortName = "Cloudflare",
-        defaultEndpoint = CLOUDFLARE_CHAT_ENDPOINT,
-        keyPlaceholder = "API Token",
-        keyUrl = "https://dash.cloudflare.com/profile/api-tokens",
-        freeTier = true,
-        fallbackModel = "@cf/meta/llama-3.1-8b-instruct",
-        hint = "برای اتصال، Account ID و API Token حساب Cloudflare لازم است. قالب رسمی Workers AI API Token یا توکنی با دسترسی Workers AI Read و Workers AI Edit مناسب است. Workers AI روزانه ۱۰٬۰۰۰ Neurons اعتبار رایگان مشترک بین مدل‌ها دارد؛ بعضی مدل‌های پیشرفته نیازمند Workers Paid هستند و مصرف بیش از اعتبار رایگان می‌تواند هزینه ایجاد کند. فهرست مدل‌های Text Generation به‌صورت زنده دریافت و مدل‌ها پیش از انتخاب آزمایش می‌شوند."
     );
-
     companion object {
         fun fromId(id: String?): AiProvider =
             values().firstOrNull { it.id.equals(id?.trim(), ignoreCase = true) } ?: HCNSEC
@@ -91,8 +79,6 @@ enum class AiProvider(
 /** Key + endpoint + model state of one provider. Stored encrypted by [Prefs]. */
 data class ProviderConfig(
     val key: String = "",
-    /** Required only by Cloudflare Workers AI; stored in encrypted preferences. */
-    val accountId: String = "",
     val endpoint: String = "",
     val model: String = "",
     val reviewModel: String = "",
