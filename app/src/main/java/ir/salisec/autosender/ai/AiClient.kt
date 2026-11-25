@@ -18,6 +18,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
+import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
 
 data class ModelProbeResult(
@@ -110,6 +111,20 @@ class AiClient(private val client: OkHttpClient) {
         }
     }
 
+    /** Cloudflare Workers AI uses account-scoped REST URLs rather than a global /models endpoint. */
+    internal fun cloudflareChatEndpoint(accountId: String): String =
+        "https://api.cloudflare.com/client/v4/accounts/${urlEncode(accountId)}/ai/v1/chat/completions"
+
+    internal fun cloudflareModelsEndpoint(accountId: String): String =
+        "https://api.cloudflare.com/client/v4/accounts/${urlEncode(accountId)}/ai/models/search?task=Text%20Generation&per_page=100&hide_experimental=true"
+
+    private fun urlEncode(value: String): String =
+        URLEncoder.encode(value.trim(), Charsets.UTF_8.name())
+
+    private fun resolveChatEndpoint(provider: AiProvider, cfg: ProviderConfig): String =
+        if (provider == AiProvider.CLOUDFLARE) cloudflareChatEndpoint(cfg.accountId)
+        else cfg.endpoint.ifBlank { provider.defaultEndpoint }
+
     /**
      * Queries GET /models of [provider], ranks all chat models by capability (OpenRouter: free models
      * only) and probes the top candidates with a minimal chat call, so the strongest model that
@@ -124,9 +139,17 @@ class AiClient(private val client: OkHttpClient) {
             return@withContext Result.failure(IllegalStateException("کلید API ${provider.title} وارد نشده است"))
         }
         try {
-            val endpoint = cfg.endpoint.ifBlank { provider.defaultEndpoint }
+            if (provider == AiProvider.CLOUDFLARE && cfg.accountId.isBlank()) {
+                return@withContext Result.failure(IllegalStateException("Cloudflare Account ID وارد نشده است"))
+            }
+            val endpoint = resolveChatEndpoint(provider, cfg)
+            val modelsUrl = if (provider == AiProvider.CLOUDFLARE) {
+                cloudflareModelsEndpoint(cfg.accountId)
+            } else {
+                modelsEndpoint(endpoint)
+            }
             val reqBuilder = Request.Builder()
-                .url(modelsEndpoint(endpoint))
+                .url(modelsUrl)
                 .header("Authorization", "Bearer " + cfg.key.trim())
             if (provider == AiProvider.OPENROUTER) reqBuilder.header("X-Title", APP_TITLE)
             val rawModels = client.newBuilder()
@@ -265,13 +288,26 @@ class AiClient(private val client: OkHttpClient) {
     /** Extracts chat-capable model ids from a provider's GET /models body. */
     internal fun parseModelList(provider: AiProvider, raw: String): List<String> {
         val root = JSONObject(raw)
-        val arr = root.optJSONArray("data") ?: root.optJSONArray("models") ?: JSONArray()
+        val arr = when (provider) {
+            AiProvider.CLOUDFLARE -> root.optJSONArray("result") ?: JSONArray()
+            else -> root.optJSONArray("data") ?: root.optJSONArray("models") ?: JSONArray()
+        }
         val out = LinkedHashSet<String>()
         for (i in 0 until arr.length()) {
             val o = arr.optJSONObject(i) ?: continue
-            var id = o.optString("id", "").trim()
+            var id = if (provider == AiProvider.CLOUDFLARE) {
+                listOf("id", "name", "model_id", "model")
+                    .map { o.optString(it, "").trim() }
+                    .firstOrNull { it.isNotBlank() && it != "null" }
+                    .orEmpty()
+            } else {
+                o.optString("id", "").trim()
+            }
             if (id.isBlank() || id == "null") continue
             if (provider == AiProvider.GOOGLE) id = id.removePrefix("models/")
+            if (provider == AiProvider.CLOUDFLARE && !id.startsWith("@")) {
+                id = "@cf/" + id.trimStart('/')
+            }
             // Groq marks retired models with active=false
             if (o.has("active") && !o.optBoolean("active", true)) continue
             if (provider == AiProvider.OPENROUTER && !isFreeOpenRouterModel(o, id)) continue
@@ -851,7 +887,10 @@ ${untrustedSourceBoundary()}"""
     ): ModelCallOutput {
         val cfg = s.config(provider)
         if (cfg.key.isBlank()) throw RuntimeException("کلید ${provider.title} در تنظیمات وارد نشده است")
-        val endpoint = cfg.endpoint.ifBlank { provider.defaultEndpoint }
+        if (provider == AiProvider.CLOUDFLARE && cfg.accountId.isBlank()) {
+            throw RuntimeException("Cloudflare Account ID وارد نشده است")
+        }
+        val endpoint = resolveChatEndpoint(provider, cfg)
         val temp = effectiveTemperature(provider, model, temperature)
         val tokens = effectiveMaxTokens(provider, model, maxTokens)
         val timedClient = client.newBuilder()
