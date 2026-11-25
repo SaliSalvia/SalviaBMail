@@ -85,6 +85,23 @@ class AiProviderTest {
         assertTrue(valid.copy(cloudflare = ProviderConfig(key = "token")).aiProviderChain().isEmpty())
     }
 
+    @Test fun cloudflareModelAccess403TriesNextModelButAuth403SkipsProvider() {
+        assertFalse(
+            client.shouldSkipProviderForHttpError(
+                AiProvider.CLOUDFLARE,
+                "Cloudflare HTTP 403: this model requires a paid plan"
+            )
+        )
+        assertTrue(
+            client.shouldSkipProviderForHttpError(
+                AiProvider.CLOUDFLARE,
+                "Cloudflare HTTP 403: insufficient permission for Workers AI"
+            )
+        )
+        assertTrue(client.shouldSkipProviderForHttpError(AiProvider.CLOUDFLARE, "Cloudflare HTTP 401: invalid token"))
+        assertTrue(client.shouldSkipProviderForHttpError(AiProvider.GROQ, "Groq HTTP 403: forbidden"))
+    }
+
     @Test fun cloudflareDefaultEndpointIsAccountScopedTemplate() {
         assertTrue(CLOUDFLARE_CHAT_ENDPOINT.contains("{account_id}"))
     }
